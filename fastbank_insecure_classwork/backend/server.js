@@ -7,6 +7,20 @@ const crypto = require("crypto");
 
 const app = express();
 
+
+app.disable('x-powered-by');
+
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.removeHeader('X-Powered-By');
+  next();
+});
+
 // --- BASIC CORS (clean, not vulnerable) ---
 app.use(
   cors({
