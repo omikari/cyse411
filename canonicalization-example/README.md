@@ -26,3 +26,4 @@ This example demonstrates:
 - The secure `/read` route uses decoding + `path.resolve` and enforces that the resolved path starts with the intended base directory.
 - The vulnerable `/read-no-validate` route demonstrates how direct path joins without canonical checks can be abused.
 - In a production environment, prefer whitelisting allowed filenames or using safe identifier-to-path mappings rather than accepting arbitrary filenames from clients.
+
