@@ -11,7 +11,7 @@ const app = express();
 app.disable('x-powered-by');
 
 app.use((req, res, next) => {
-  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; frame-ancestors 'self'; form-action 'self'");
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.setHeader('Pragma', 'no-cache');
