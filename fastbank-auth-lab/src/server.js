@@ -12,19 +12,12 @@ app.disable("x-powered-by");
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; frame-ancestors 'self'; form-action 'self'"
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
   );
   res.setHeader(
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()"
   );
-  res.setHeader(
-    "Cache-Control",
-    "no-cache, no-store, must-revalidate, private"
-  );
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  res.setHeader("Surrogate-Control", "no-store");
   res.removeHeader("X-Powered-By");
   next();
 });
@@ -127,4 +120,3 @@ app.post("/api/logout", (req, res) => {
 app.listen(PORT, () => {
   console.log(`FastBank Auth Lab running at http://localhost:${PORT}`);
 });
-
