@@ -1,6 +1,13 @@
 const express = require("express");
 const app = express();
 
+app.disable("x-powered-by");
+
+app.use((req, res, next) => {
+  res.removeHeader("X-Powered-By");
+  next();
+});
+
 app.use(express.json());
 
 // Fake "database"
