@@ -100,6 +100,16 @@ app.post('/setup-sample', (req, res) => {
   res.json({ ok: true, base: BASE_DIR });
 });
 
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send('User-agent: *\nDisallow:\n');
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml');
+  res.send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+});
+
 // Only listen when run directly (not when imported by tests)
 if (require.main === module) {
   const port = process.env.PORT || 4000;
@@ -109,3 +119,4 @@ if (require.main === module) {
 }
 
 module.exports = app;
+
