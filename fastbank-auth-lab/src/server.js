@@ -8,6 +8,27 @@ const bcrypt = require("bcrypt");
 const app = express();
 const PORT = 3001;
 
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; frame-ancestors 'self'; form-action 'self'"
+  );
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()"
+  );
+  res.setHeader(
+    "Cache-Control",
+    "no-cache, no-store, must-revalidate, private"
+  );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  res.removeHeader("X-Powered-By");
+  next();
+});
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
