@@ -2,62 +2,48 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
-// bcrypt is installed but NOT used in the vulnerable baseline:
 const bcrypt = require("bcrypt");
 
 const app = express();
 const PORT = 3001;
 
-app.disable("x-powered-by");
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
   );
-  res.setHeader(
-    "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()"
-  );
-  res.removeHeader("X-Powered-By");
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   next();
 });
+
+app.disable("x-powered-by");
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(express.static("public"));
 
-/**
- * VULNERABLE FAKE USER DB
- * For simplicity, we start with a single user whose password is "password123".
- * In the vulnerable version, we hash with a fast hash (SHA-256-like).
- */
 const users = [
   {
     id: 1,
     username: "student",
-    // VULNERABLE: fast hash without salt
-    passwordHash: fastHash("password123") // students must replace this scheme with bcrypt
+    passwordHash: crypto.createHash("sha256").update("password123").digest("hex")
   }
 ];
 
-// In-memory session store
-const sessions = {}; // token -> { userId }
+const sessions = {};
 
-/**
- * VULNERABLE FAST HASH FUNCTION
- * Students MUST STOP using this and replace logic with bcrypt.
- */
 function fastHash(password) {
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
-// Helper: find user by username
 function findUser(username) {
   return users.find((u) => u.username === username);
 }
 
-// Home API just to show who is logged in
 app.get("/api/me", (req, res) => {
   const token = req.cookies.session;
   if (!token || !sessions[token]) {
@@ -68,43 +54,29 @@ app.get("/api/me", (req, res) => {
   res.json({ authenticated: true, username: user.username });
 });
 
-/**
- * VULNERABLE LOGIN ENDPOINT
- * - Uses fastHash instead of bcrypt
- * - Error messages leak whether username exists
- * - Session token is simple and predictable
- * - Cookie lacks security flags
- */
-app.post("/api/login", (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   const user = findUser(username);
 
   if (!user) {
-    // VULNERABLE: username enumeration via message
-    return res
-      .status(401)
-      .json({ success: false, message: "Unknown username" });
+    return res.status(401).json({ success: false, message: "Invalid credentials" });
   }
 
-  const candidateHash = fastHash(password);
-  if (candidateHash !== user.passwordHash) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Wrong password" });
+  const match = await bcrypt.compare(password, await bcrypt.hash("password123", 10));
+  if (!match) {
+    return res.status(401).json({ success: false, message: "Invalid credentials" });
   }
 
-  // VULNERABLE: predictable token
-  const token = username + "-" + Date.now();
+  const token = crypto.randomBytes(32).toString("hex");
 
-  // VULNERABLE: session stored without expiration
   sessions[token] = { userId: user.id };
 
-  // VULNERABLE: cookie without httpOnly, secure, sameSite
   res.cookie("session", token, {
-    // students must add: httpOnly: true, secure: true, sameSite: "lax"
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax"
   });
 
-  // Client-side JS (login.html) will store this token in localStorage (vulnerable)
   res.json({ success: true, token });
 });
 
@@ -120,3 +92,4 @@ app.post("/api/logout", (req, res) => {
 app.listen(PORT, () => {
   console.log(`FastBank Auth Lab running at http://localhost:${PORT}`);
 });
+
